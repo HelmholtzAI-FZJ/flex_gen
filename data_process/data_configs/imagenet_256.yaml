@@ -1,0 +1,18 @@
+seed: 42
+
+
+train_data:
+  dataset:
+    path: /p/project/westai0000003/DATASETS/imagenet-1k
+    
+  transforms:
+    no_aug: True # Do not use any Timm's augmentations for INET training
+    is_training: True
+    input_size: 256
+    mean: [0.5, 0.5, 0.5]
+    std: [0.5,0.5,0.5]
+  dataloader:
+    persistent_workers: true
+    batch_size: ${train_batch_size}
+    num_workers: 20
+    shuffle: True

@@ -1,0 +1,120 @@
+seed: 42
+dataset: imagenet-1k
+train_batch_size: 16
+
+accelerate:
+  mixed_precision: bf16
+
+ema:
+  beta: 0.999
+  
+model:
+  name: flexTokenizer
+  embedding_dim: 8
+  hidden_channels: 128
+  channel_multipliers: [1, 2, 2, 4]
+  encoder_layer_configs: [2, 2, 2, 2, 2]
+  decoder_layer_configs: [2, 2, 2, 2, 2]
+  quantizer_config:
+    quantize_type: vq
+    embed_dim: 8
+    num_embed: 8192
+    commitment_loss_weight: 0.25
+    use_l2_norm: False
+    use_uniform_init: True
+
+
+discriminator:
+  name: no_discriminator
+  lambda_perceptual_loss: 1.0
+
+  
+logger:
+  dataset_name: ${dataset} # this is used to apply the correct normalization to the images
+  checkpoint_every_step: 5000
+  wandb:
+    project: any_tokenizer_official
+    mode: offline
+
+  image_logger:
+    img_log_iter_frequency: 1
+    max_images_to_log: 8
+    save_on_local: true
+    save_on_wandb: true
+    rescale_mean: [0.5, 0.5, 0.5]
+    rescale_std: [0.5, 0.5, 0.5]
+  
+train:
+  num_train_steps : 500000
+  grad_accum_every: 1
+  apply_gradient_penalty_every: 0
+  max_grad_norm: 2
+  discr_start_after_step: 999999999999999
+  train_batch_size: ${train_batch_size}
+
+evaluation:
+  eval_every_step: 5000
+  eval_for_steps: 195
+  dataset_name: ${dataset}
+  metrics:
+    - mse
+    - fid
+    - is
+    # - sfid
+    # - fdd
+    - lpips
+    - psnr
+    - ssim
+
+optim:
+  base_lr: 1e-4
+  lr_scale: fixed
+  wd: 0.05
+  betas: [0.9, 0.95]
+  eps: 1e-8
+  
+disc_optim:
+  base_lr: 1e-4
+  lr_scale: fixed
+  wd: 0
+  betas: [0.9, 0.95]
+  eps: 1e-8
+
+lr_scheduler:
+  name: constant
+
+disc_lr_scheduler:
+  name: constant
+
+train_data:
+  dataset:
+    path: /p/project/westai0000003/DATASETS/imagenet-1k
+    split: train
+  transforms:
+    # before normlization, the images should be in range of [0, 1]
+    no_aug: True # Do not use any Timm's augmentations for INET training
+    is_training: True
+    input_size: 128
+    mean: [0.5, 0.5, 0.5]
+    std: [0.5, 0.5, 0.5]
+  dataloader:
+    persistent_workers: true
+    batch_size: ${train_batch_size}
+    num_workers: 20
+    shuffle: True
+
+eval_data: 
+  dataset:
+    path: /p/project/westai0000003/DATASETS/imagenet-1k
+    split: validation
+  transforms:
+    no_aug: True # Do not use any Timm's augmentations for INET training
+    is_training: False
+    input_size: 128
+    mean: [0.5, 0.5, 0.5]
+    std: [0.5, 0.5, 0.5]
+  dataloader:
+    persistent_workers: true
+    batch_size: ${train_batch_size} 
+    num_workers: 20
+    shuffle: True
