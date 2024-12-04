@@ -28,7 +28,7 @@ def flexTokenizer(pretrained=False, **kwargs):
         elif 'repo_id' in kwargs:
             # Automatically fetch pretrained weights from Hugging Face Hub
             repo_id = kwargs.get("repo_id")
-            filename = kwargs.get("filename", "checkpoint.safetensors")  # Default file
+            filename = kwargs.get("filename", "checkpoint.pt")  # Default file
             # Download from Hugging Face
             checkpoint_path = hf_hub_download(repo_id=repo_id, filename=filename)
             return FlexTokenizer.init_and_load_from(path=checkpoint_path)            
